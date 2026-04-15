@@ -20,14 +20,20 @@ export class GeminiClient {
 
   async *stream(messages: Message[], system: string): AsyncGenerator<[ChunkType, string]> {
     const contents = toGeminiContents(messages);
-    const stream = await this.ai.models.generateContentStream({
-      model: this.model,
-      contents,
-      config: {
-        systemInstruction: system,
-        maxOutputTokens: 4096,
-      },
-    });
+    let stream: Awaited<ReturnType<typeof this.ai.models.generateContentStream>>;
+    try {
+      stream = await this.ai.models.generateContentStream({
+        model: this.model,
+        contents,
+        config: {
+          systemInstruction: system,
+          maxOutputTokens: 4096,
+        },
+      });
+    } catch {
+      // Gemini API errors: stop silently, show nothing to the user.
+      return;
+    }
 
     let finalUsage: string | null = null;
     async function* usageWrapper() {
@@ -39,7 +45,12 @@ export class GeminiClient {
       }
     }
 
-    yield* byteScanner(usageWrapper());
+    try {
+      yield* byteScanner(usageWrapper());
+    } catch {
+      // Gemini stream errors: stop silently, show nothing to the user.
+      return;
+    }
 
     if (finalUsage) {
       yield ['usage', finalUsage];

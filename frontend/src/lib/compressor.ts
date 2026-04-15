@@ -15,7 +15,10 @@ export function estimateTokens(messages: Message[]): number {
 const SOFT_LIMIT = 160_000; // 80% — sliding window + summary
 const HARD_LIMIT = 180_000; // 90% — full snapshot reset
 
-type LLMComplete = (messages: Message[], system: string) => Promise<{ text: string; usage?: string }>;
+type LLMComplete = (
+  messages: Message[],
+  system: string
+) => Promise<{ text: string; usage?: string }>;
 
 export async function maybeCompress(
   messages: Message[],

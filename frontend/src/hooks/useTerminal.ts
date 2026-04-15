@@ -81,7 +81,10 @@ export function useTerminal({ session }: UseTerminalOptions) {
       const trimmed = command.trim();
 
       // Handle local "clear" command to avoid round-trip and preserve context
-      if (!session.state.interactive_mode && (trimmed.toLowerCase() === 'clear' || trimmed.toLowerCase() === 'cls')) {
+      if (
+        !session.state.interactive_mode &&
+        (trimmed.toLowerCase() === 'clear' || trimmed.toLowerCase() === 'cls')
+      ) {
         setEntries([]);
         if (trimmed && trimmed !== '^C') {
           setHistory((prev) =>

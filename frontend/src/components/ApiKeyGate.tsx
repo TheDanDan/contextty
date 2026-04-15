@@ -60,32 +60,28 @@ export default function ApiKeyGate({ onKeySet, onTrialStart }: Props) {
           <span style={styles.prompt}>$</span>
           <span style={styles.title}> llm-terminal</span>
         </div>
-        <p style={styles.subtitle}>
-          A stateful Unix shell emulator powered by Google Gemini.
-        </p>
+        <p style={styles.subtitle}>A stateful Unix shell powered by Google Gemini.</p>
+
+        {/* Model selector — shared */}
+        <div style={styles.model}>
+          <label style={styles.label} htmlFor="model">
+            Model
+          </label>
+          <select
+            id="model"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            style={{ ...styles.input, cursor: 'pointer' }}
+          >
+            <option value="gemini-2.5-flash">gemini-2.5-flash — fast</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro — more capable</option>
+          </select>
+        </div>
 
         {/* Trial section */}
         <div style={styles.trialSection}>
-          <p style={styles.trialHeading}>Try it free — 10 messages / day</p>
-          <p style={styles.trialNote}>
-            No API key needed. Sign in to start your trial. Requests are proxied through our
-            server; your session context stays in your browser.
-          </p>
-
-          <div style={styles.model}>
-            <label style={styles.label} htmlFor="trial-model">
-              Model
-            </label>
-            <select
-              id="trial-model"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              style={{ ...styles.input, cursor: 'pointer' }}
-            >
-              <option value="gemini-2.5-flash">gemini-2.5-flash — faster, lower cost</option>
-              <option value="gemini-2.5-pro">gemini-2.5-pro — more capable</option>
-            </select>
-          </div>
+          <p style={styles.trialHeading}>Sign in to try it</p>
+          <p style={styles.trialNote}>Try it out — limited messages per day, no API key needed</p>
 
           <div style={styles.authButtons}>
             <button
@@ -110,7 +106,7 @@ export default function ApiKeyGate({ onKeySet, onTrialStart }: Props) {
         {/* Divider */}
         <div style={styles.divider}>
           <div style={styles.dividerLine} />
-          <span style={styles.dividerText}>or use your own key</span>
+          <span style={styles.dividerText}>or bring your own key</span>
           <div style={styles.dividerLine} />
         </div>
 
@@ -131,19 +127,7 @@ export default function ApiKeyGate({ onKeySet, onTrialStart }: Props) {
             autoComplete="off"
             style={styles.input}
           />
-
-          <label style={styles.label} htmlFor="byok-model">
-            Model
-          </label>
-          <select
-            id="byok-model"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            style={{ ...styles.input, cursor: 'pointer' }}
-          >
-            <option value="gemini-2.5-flash">gemini-2.5-flash — faster, lower cost</option>
-            <option value="gemini-2.5-pro">gemini-2.5-pro — more capable</option>
-          </select>
+          <p style={styles.trialNote}>Your key is stored locally and never sent to our servers</p>
 
           {error && <p style={styles.error}>{error}</p>}
 
@@ -153,7 +137,7 @@ export default function ApiKeyGate({ onKeySet, onTrialStart }: Props) {
         </form>
 
         <p style={styles.hint}>
-          Get a free API key at{' '}
+          Get a free key at{' '}
           <a
             href="https://aistudio.google.com/apikey"
             target="_blank"

@@ -8,11 +8,11 @@ interface TooltipProps {
   delay?: number;
 }
 
-export default function Tooltip({ 
-  text, 
-  children, 
-  position = 'bottom', 
-  delay = 200 
+export default function Tooltip({
+  text,
+  children,
+  position = 'bottom',
+  delay = 200,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -39,15 +39,9 @@ export default function Tooltip({
   }, []);
 
   return (
-    <div 
-      className="tooltip-container" 
-      onMouseEnter={showTooltip} 
-      onMouseLeave={hideTooltip}
-    >
+    <div className="tooltip-container" onMouseEnter={showTooltip} onMouseLeave={hideTooltip}>
       {children}
-      <div className={`tooltip-box tooltip-${position} ${isVisible ? 'visible' : ''}`}>
-        {text}
-      </div>
+      <div className={`tooltip-box tooltip-${position} ${isVisible ? 'visible' : ''}`}>{text}</div>
     </div>
   );
 }

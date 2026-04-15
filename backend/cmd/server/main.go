@@ -30,7 +30,7 @@ func main() {
 	}
 
 	// Upstash Redis client
-	redisClient, err := redisclient.NewClient(cfg.UpstashRedisURL, cfg.TrialLimit, cfg.TrialTTLSeconds)
+	redisClient, err := redisclient.NewClient(cfg.UpstashRedisURL, cfg.TrialTTLSeconds)
 	if err != nil {
 		log.Fatalf("redis: %v", err)
 	}
@@ -63,8 +63,8 @@ func main() {
 	protected := r.Group("/")
 	protected.Use(firebaseClient.Middleware())
 	{
-		protected.POST("/stream", handlers.StreamHandler(redisClient, geminiClient))
-		protected.GET("/me", handlers.UsageHandler(redisClient, cfg.TrialLimit))
+		protected.POST("/stream", handlers.StreamHandler(redisClient, geminiClient, cfg.TrialCostLimit))
+		protected.GET("/me", handlers.UsageHandler(redisClient, cfg.TrialCostLimit))
 	}
 
 	addr := ":" + cfg.Port

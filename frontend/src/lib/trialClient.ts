@@ -36,7 +36,8 @@ async function* sseToTextStream(response: Response): AsyncIterable<{ text?: stri
           if (reason === 'trial_limit_exceeded') {
             throw new Error('trial_limit_exceeded');
           }
-          throw new Error(`backend_error: ${reason}`);
+          // Gemini/backend errors: stop the stream silently, show nothing to the user.
+          return;
         }
 
         const obj = JSON.parse(data) as SSEChunk;
@@ -44,6 +45,20 @@ async function* sseToTextStream(response: Response): AsyncIterable<{ text?: stri
       }
     }
   }
+}
+
+export async function fetchTrialInfo(): Promise<{
+  cost_used: number;
+  cost_limit: number;
+  resets_in_seconds: number;
+} | null> {
+  const idToken = await getIdToken();
+  if (!idToken) return null;
+  const res = await fetch(`${BACKEND_URL}/me`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) return null;
+  return res.json() as Promise<{ cost_used: number; cost_limit: number; resets_in_seconds: number }>;
 }
 
 export class TrialClient {
@@ -85,12 +100,9 @@ export class TrialClient {
     yield* byteScanner(sseToTextStream(response));
   }
 
-  // Context compression (complete()) is not used in trial mode — the 10 msg/day
+  // Context compression (complete()) is not used in trial mode — the daily cost
   // limit means token counts never approach the 160k compression threshold.
-  async complete(
-    messages: Message[],
-    system: string
-  ): Promise<{ text: string; usage?: string }> {
+  async complete(messages: Message[], system: string): Promise<{ text: string; usage?: string }> {
     void messages;
     void system;
     return { text: '{}' };

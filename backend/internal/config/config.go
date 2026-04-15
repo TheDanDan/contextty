@@ -8,13 +8,13 @@ import (
 )
 
 type Config struct {
-	GeminiAPIKey              string
+	GeminiAPIKey               string
 	FirebaseServiceAccountJSON string
-	UpstashRedisURL           string
-	AllowedOrigins            []string
-	Port                      string
-	TrialLimit                int
-	TrialTTLSeconds           int
+	UpstashRedisURL            string
+	AllowedOrigins             []string
+	Port                       string
+	TrialCostLimit             float64
+	TrialTTLSeconds            int
 }
 
 func Load() (*Config, error) {
@@ -50,10 +50,10 @@ func Load() (*Config, error) {
 		cfg.Port = "8080"
 	}
 
-	cfg.TrialLimit = 10
-	if v := os.Getenv("TRIAL_LIMIT"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			cfg.TrialLimit = n
+	cfg.TrialCostLimit = 0.05
+	if v := os.Getenv("TRIAL_COST_LIMIT"); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil && f > 0 {
+			cfg.TrialCostLimit = f
 		}
 	}
 

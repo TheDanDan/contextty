@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -18,9 +20,9 @@ type streamRequest struct {
 }
 
 // StreamHandler handles POST /stream.
-// It verifies the trial quota, then streams Gemini output as Server-Sent Events.
+// It verifies the trial cost quota, then streams Gemini output as Server-Sent Events.
 // The system prompt is always hardcoded server-side — the client's "system" field is ignored.
-func StreamHandler(redis *redisclient.Client, gem *gemini.Client) gin.HandlerFunc {
+func StreamHandler(redis *redisclient.Client, gem *gemini.Client, costLimit float64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := c.GetString("uid")
 
@@ -34,8 +36,8 @@ func StreamHandler(redis *redisclient.Client, gem *gemini.Client) gin.HandlerFun
 			return
 		}
 
-		// Atomically check and increment the trial counter.
-		_, allowed, err := redis.CheckAndIncrement(c.Request.Context(), uid)
+		// Pre-check: reject if the user has already hit the cost limit.
+		_, allowed, err := redis.CheckCostLimit(c.Request.Context(), uid, costLimit)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "usage check failed"})
 			return
@@ -51,15 +53,24 @@ func StreamHandler(redis *redisclient.Client, gem *gemini.Client) gin.HandlerFun
 		c.Header("Connection", "keep-alive")
 		c.Header("X-Accel-Buffering", "no") // disable Nginx buffering
 
-		// Bridge channel: Gemini goroutine → SSE writer
+		// Bridge channels: Gemini goroutine → SSE writer
 		chanText := make(chan string, 64)
 		errChan := make(chan error, 1)
+		usageChan := make(chan gemini.Usage, 1)
+
+		model := req.Model
+		if model == "" {
+			model = "gemini-2.5-flash"
+		}
 
 		go func() {
 			defer close(chanText)
-			if err := gem.StreamText(c.Request.Context(), req.Messages, req.Model, chanText); err != nil {
+			usage, err := gem.StreamText(c.Request.Context(), req.Messages, model, chanText)
+			if err != nil {
 				errChan <- err
+				return
 			}
+			usageChan <- usage
 		}()
 
 		c.Stream(func(w io.Writer) bool {
@@ -87,6 +98,25 @@ func StreamHandler(redis *redisclient.Client, gem *gemini.Client) gin.HandlerFun
 				return false
 			}
 		})
+
+		// Record cost only on successful Gemini completion.
+		// Gemini errors send to errChan and never populate usageChan, so the
+		// default branch fires and the user's usage counter is left unchanged.
+		// A detached context is used so cost is recorded even if the client
+		// disconnected and the request context is already cancelled.
+		select {
+		case usage := <-usageChan:
+			cost := usage.CostUSD(model)
+			if cost > 0 {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				if _, err := redis.AddCost(ctx, uid, cost); err != nil {
+					fmt.Printf("warn: failed to record cost for uid=%s: %v\n", uid, err)
+				}
+			}
+		default:
+			// Gemini error or cancellation; do not charge the user.
+		}
 	}
 }
 

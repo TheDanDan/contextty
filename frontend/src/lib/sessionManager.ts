@@ -10,11 +10,11 @@ export interface LLMClient {
 }
 
 const COSTS: Record<string, { input: number; output: number }> = {
-  'gemini-2.5-flash': { input: 0.30 / 1e6, output: 2.50 / 1e6 },
-  'gemini-2.5-pro': { input: 1.25 / 1e6, output: 10.00 / 1e6 },
+  'gemini-2.5-flash': { input: 0.3 / 1e6, output: 2.5 / 1e6 },
+  'gemini-2.5-pro': { input: 1.25 / 1e6, output: 10.0 / 1e6 },
 };
 
-const DEFAULT_COST = { input: 0.30 / 1e6, output: 2.50 / 1e6 };
+const DEFAULT_COST = { input: 0.3 / 1e6, output: 2.5 / 1e6 };
 const TRUNCATE_LIMIT = 5000;
 const MAX_TRANSIENT_TURNS = 3;
 
@@ -37,6 +37,7 @@ export class SessionManager {
       estimatedCost: 0,
       lastCost: 0,
       burnRate: 0,
+      messageCount: 0,
     };
     this.messageCount = 0;
   }
@@ -47,6 +48,7 @@ export class SessionManager {
     const userContent = `${this.state.toHeader()}\n${rawInput}`;
     this.messages.push({ role: 'user', content: userContent, isTransient });
     this.messageCount++;
+    this.usage.messageCount = this.messageCount;
 
     let fullAssistantText = '';
     let stateJson: string | null = null;
@@ -81,7 +83,8 @@ export class SessionManager {
     }
 
     const reconstructed =
-      `<shell_output>${storageAssistantText}</shell_output>\n` + `<state>${stateJson ?? '{}'}</state>`;
+      `<shell_output>${storageAssistantText}</shell_output>\n` +
+      `<state>${stateJson ?? '{}'}</state>`;
     this.messages.push({ role: 'assistant', content: reconstructed, isTransient });
 
     // Update shell state from returned JSON
@@ -133,6 +136,7 @@ export class SessionManager {
       estimatedCost: 0,
       lastCost: 0,
       burnRate: 0,
+      messageCount: 0,
     };
     this.messageCount = 0;
   }

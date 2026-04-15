@@ -36,6 +36,7 @@ export interface TokenUsage {
   estimatedCost: number;
   lastCost: number;
   burnRate: number;
+  messageCount: number;
 }
 
 export type ChunkType = 'output' | 'state' | 'mode' | 'usage';

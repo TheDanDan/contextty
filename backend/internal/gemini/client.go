@@ -17,6 +17,28 @@ type Message struct {
 	Content string `json:"content"`
 }
 
+// Usage holds token counts from a completed Gemini request.
+type Usage struct {
+	InputTokens  int32
+	OutputTokens int32
+}
+
+// modelPricing maps model name to [inputPricePerToken, outputPricePerToken] in USD.
+var modelPricing = map[string][2]float64{
+	"gemini-2.5-flash": {0.15 / 1e6, 0.60 / 1e6},
+	"gemini-2.0-flash": {0.10 / 1e6, 0.40 / 1e6},
+	"gemini-1.5-flash": {0.075 / 1e6, 0.30 / 1e6},
+}
+
+// CostUSD returns the estimated USD cost for this usage given the model.
+func (u Usage) CostUSD(model string) float64 {
+	pricing, ok := modelPricing[model]
+	if !ok {
+		pricing = modelPricing["gemini-2.5-flash"]
+	}
+	return float64(u.InputTokens)*pricing[0] + float64(u.OutputTokens)*pricing[1]
+}
+
 // Client holds a reusable Gemini AI client.
 type Client struct {
 	apiKey string
@@ -29,10 +51,10 @@ func NewClient(apiKey string) *Client {
 
 // StreamText streams raw Gemini text chunks into the provided channel.
 // The system prompt is always sourced server-side from prompts.SystemPrompt.
-// The caller is responsible for closing nothing — StreamText closes chanOut when done.
-func (c *Client) StreamText(ctx context.Context, messages []Message, model string, chanOut chan<- string) error {
+// Returns token usage after the stream completes.
+func (c *Client) StreamText(ctx context.Context, messages []Message, model string, chanOut chan<- string) (Usage, error) {
 	if len(messages) == 0 {
-		return fmt.Errorf("messages must not be empty")
+		return Usage{}, fmt.Errorf("messages must not be empty")
 	}
 	if model == "" {
 		model = "gemini-2.5-flash"
@@ -40,7 +62,7 @@ func (c *Client) StreamText(ctx context.Context, messages []Message, model strin
 
 	client, err := genai.NewClient(ctx, option.WithAPIKey(c.apiKey))
 	if err != nil {
-		return fmt.Errorf("genai.NewClient: %w", err)
+		return Usage{}, fmt.Errorf("genai.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -68,6 +90,7 @@ func (c *Client) StreamText(ctx context.Context, messages []Message, model strin
 	cs := gmodel.StartChat()
 	cs.History = history
 
+	var finalUsage *genai.UsageMetadata
 	iter := cs.SendMessageStream(ctx, genai.Text(lastMsg.Content))
 	for {
 		resp, err := iter.Next()
@@ -75,7 +98,10 @@ func (c *Client) StreamText(ctx context.Context, messages []Message, model strin
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("gemini stream: %w", err)
+			return Usage{}, fmt.Errorf("gemini stream: %w", err)
+		}
+		if resp.UsageMetadata != nil {
+			finalUsage = resp.UsageMetadata
 		}
 		if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {
 			continue
@@ -85,10 +111,16 @@ func (c *Client) StreamText(ctx context.Context, messages []Message, model strin
 				select {
 				case chanOut <- string(txt):
 				case <-ctx.Done():
-					return ctx.Err()
+					return Usage{}, ctx.Err()
 				}
 			}
 		}
 	}
-	return nil
+
+	var usage Usage
+	if finalUsage != nil {
+		usage.InputTokens = finalUsage.PromptTokenCount
+		usage.OutputTokens = finalUsage.CandidatesTokenCount
+	}
+	return usage, nil
 }

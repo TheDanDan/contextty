@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTerminal } from '../hooks/useTerminal';
 import OutputLine from './OutputLine';
 import PromptBar, { type PromptBarHandle } from './PromptBar';
 import Tooltip from './Tooltip';
 import type { SessionManager } from '../lib/sessionManager';
+import { fetchTrialInfo } from '../lib/trialClient';
 
 const MODELS = [
   { value: 'gemini-2.5-flash', label: 'gemini-2.5-flash' },
@@ -39,6 +40,21 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
 
   const CONTEXT_LIMIT = 200000;
   const contextPct = Math.min(100, (usage.activeTokens / CONTEXT_LIMIT) * 100);
+
+  const [trialInfo, setTrialInfo] = useState<{ cost_used: number; cost_limit: number } | null>(null);
+
+  useEffect(() => {
+    if (!isTrial) return;
+    fetchTrialInfo().then(setTrialInfo);
+  }, [isTrial, usage.messageCount]);
+
+  const budgetPct = trialInfo
+    ? Math.min(100, (trialInfo.cost_used / trialInfo.cost_limit) * 100)
+    : 0;
+  const budgetLeft = trialInfo ? Math.max(0, trialInfo.cost_limit - trialInfo.cost_used) : null;
+  // Estimate msgs remaining: use observed burn rate if available, else ~$0.001/msg for flash models
+  const estimatedCostPerMsg = usage.burnRate > 0 ? usage.burnRate : 0.001;
+  const estimatedMsgsLeft = budgetLeft != null ? Math.floor(budgetLeft / estimatedCostPerMsg) : null;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const promptBarRef = useRef<PromptBarHandle>(null);
@@ -111,7 +127,9 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
             </div>
           </Tooltip>
 
-          <Tooltip text={`Active context usage: ${usage.activeTokens.toLocaleString()} / ${CONTEXT_LIMIT.toLocaleString()} tokens`}>
+          <Tooltip
+            text={`Active context usage: ${usage.activeTokens.toLocaleString()} / ${CONTEXT_LIMIT.toLocaleString()} tokens`}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ color: '#569cd6' }}>context:</span>
               <div
@@ -128,7 +146,8 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
                   style={{
                     width: `${contextPct}%`,
                     height: '100%',
-                    backgroundColor: contextPct > 90 ? '#f44336' : contextPct > 70 ? '#ff9800' : '#4ec94e',
+                    backgroundColor:
+                      contextPct > 90 ? '#f44336' : contextPct > 70 ? '#ff9800' : '#4ec94e',
                     transition: 'width 0.3s ease',
                   }}
                 />
@@ -137,17 +156,50 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
             </div>
           </Tooltip>
 
-          <Tooltip text={`Total estimated cost: $${usage.estimatedCost.toFixed(6)}\nLast message: $${usage.lastCost.toFixed(6)}`}>
-            <div>
-              <span style={{ color: '#569cd6' }}>cost:</span>{' '}
-              <span style={{ color: '#ce9178' }}>
-                ${usage.estimatedCost.toFixed(3)}
-                <span style={{ color: '#888', fontSize: '10px', marginLeft: '4px' }}>
-                  (${usage.burnRate.toFixed(4)}/msg)
+          {isTrial ? (
+            <Tooltip text="Daily limit for trying it out. Resets daily. Estimate based on average message cost.">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: '#569cd6' }}>usage:</span>
+                <div
+                  style={{
+                    width: '60px',
+                    height: '6px',
+                    backgroundColor: '#333',
+                    borderRadius: '3px',
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${budgetPct}%`,
+                      height: '100%',
+                      backgroundColor:
+                        budgetPct > 90 ? '#f44336' : budgetPct > 70 ? '#ff9800' : '#4ec94e',
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </div>
+                <span style={{ color: '#ce9178' }}>
+                  {estimatedMsgsLeft != null ? `~${estimatedMsgsLeft} msgs left` : '…'}
                 </span>
-              </span>
-            </div>
-          </Tooltip>
+              </div>
+            </Tooltip>
+          ) : (
+            <Tooltip
+              text={`Total estimated cost: $${usage.estimatedCost.toFixed(6)}\nLast message: $${usage.lastCost.toFixed(6)}`}
+            >
+              <div>
+                <span style={{ color: '#569cd6' }}>cost:</span>{' '}
+                <span style={{ color: '#ce9178' }}>
+                  ${usage.estimatedCost.toFixed(3)}
+                  <span style={{ color: '#888', fontSize: '10px', marginLeft: '4px' }}>
+                    (${usage.burnRate.toFixed(4)}/msg)
+                  </span>
+                </span>
+              </div>
+            </Tooltip>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <Tooltip text="Switch model">
