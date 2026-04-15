@@ -58,7 +58,11 @@ export async function fetchTrialInfo(): Promise<{
     headers: { Authorization: `Bearer ${idToken}` },
   });
   if (!res.ok) return null;
-  return res.json() as Promise<{ cost_used: number; cost_limit: number; resets_in_seconds: number }>;
+  return res.json() as Promise<{
+    cost_used: number;
+    cost_limit: number;
+    resets_in_seconds: number;
+  }>;
 }
 
 export class TrialClient {

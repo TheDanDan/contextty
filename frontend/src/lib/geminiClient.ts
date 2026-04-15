@@ -18,7 +18,12 @@ function extractErrorMessage(err: unknown): string {
       // not valid JSON from that point, fall through
     }
   }
-  return raw.split('\n').map((l) => l.trim()).find((l) => l.length > 0) ?? raw;
+  return (
+    raw
+      .split('\n')
+      .map((l) => l.trim())
+      .find((l) => l.length > 0) ?? raw
+  );
 }
 
 function toGeminiContents(messages: Message[]) {

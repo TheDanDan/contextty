@@ -68,8 +68,8 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 
         <p style={{ color: '#6a9955', fontSize: '12px', lineHeight: '1.7', marginBottom: '20px' }}>
           Whether you're exploring a concept, running a quick script, or just want a capable
-          terminal without spinning up a VM — contextty has you covered. No setup, no install,
-          just open and start typing.
+          terminal without spinning up a VM — contextty has you covered. No setup, no install, just
+          open and start typing.
         </p>
 
         {/* Tech stack */}
@@ -79,7 +79,15 @@ function AboutModal({ onClose }: { onClose: () => void }) {
             paddingTop: '16px',
           }}
         >
-          <p style={{ color: '#569cd6', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px' }}>
+          <p
+            style={{
+              color: '#569cd6',
+              fontSize: '11px',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              marginBottom: '10px',
+            }}
+          >
             Built with
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -147,7 +155,9 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
   const CONTEXT_LIMIT = 200000;
   const contextPct = Math.min(100, (usage.activeTokens / CONTEXT_LIMIT) * 100);
 
-  const [trialInfo, setTrialInfo] = useState<{ cost_used: number; cost_limit: number } | null>(null);
+  const [trialInfo, setTrialInfo] = useState<{ cost_used: number; cost_limit: number } | null>(
+    null
+  );
 
   useEffect(() => {
     if (!isTrial) return;
@@ -160,7 +170,8 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
   const budgetLeft = trialInfo ? Math.max(0, trialInfo.cost_limit - trialInfo.cost_used) : null;
   // Estimate msgs remaining: use observed burn rate if available, else ~$0.001/msg for flash models
   const estimatedCostPerMsg = usage.burnRate > 0 ? usage.burnRate : 0.001;
-  const estimatedMsgsLeft = budgetLeft != null ? Math.floor(budgetLeft / estimatedCostPerMsg) : null;
+  const estimatedMsgsLeft =
+    budgetLeft != null ? Math.floor(budgetLeft / estimatedCostPerMsg) : null;
 
   const [showAbout, setShowAbout] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -329,19 +340,21 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifySelf: 'end' }}>
-          {!isMobile && <Tooltip text="Switch model">
-            <select
-              value={model}
-              onChange={(e) => onChangeModel(e.target.value)}
-              style={modelSelect}
-            >
-              {MODELS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </Tooltip>}
+          {!isMobile && (
+            <Tooltip text="Switch model">
+              <select
+                value={model}
+                onChange={(e) => onChangeModel(e.target.value)}
+                style={modelSelect}
+              >
+                {MODELS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </Tooltip>
+          )}
           <Tooltip text="Reset session">
             <button onClick={resetSession} style={toolbarBtn}>
               reset
