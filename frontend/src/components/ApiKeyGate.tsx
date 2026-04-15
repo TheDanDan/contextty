@@ -154,7 +154,7 @@ export default function ApiKeyGate({ onKeySet, onTrialStart }: Props) {
 
 const styles: Record<string, React.CSSProperties> = {
   overlay: {
-    height: '100vh',
+    height: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -171,6 +171,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     padding: '32px',
     margin: 'auto',
+    zoom: 0.8,
   },
   header: {
     marginBottom: '12px',

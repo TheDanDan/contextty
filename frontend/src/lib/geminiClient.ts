@@ -2,6 +2,25 @@ import { GoogleGenAI } from '@google/genai';
 import type { Message, ChunkType } from '../types';
 import { byteScanner } from './byteScanner';
 
+function extractErrorMessage(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  // Gemini SDK error message is (or contains) a JSON body like {"error":{"message":"..."}}
+  const start = raw.indexOf('{');
+  if (start !== -1) {
+    try {
+      const parsed = JSON.parse(raw.slice(start));
+      console.error('Full Gemini API error response:', parsed);
+      const errorParsed = JSON.parse(parsed.error.message ?? '{}');
+      console.error('Gemini API error details:', errorParsed);
+      const msg: string = errorParsed?.error.message ?? parsed?.message ?? '';
+      if (msg) return msg;
+    } catch {
+      // not valid JSON from that point, fall through
+    }
+  }
+  return raw.split('\n').map((l) => l.trim()).find((l) => l.length > 0) ?? raw;
+}
+
 function toGeminiContents(messages: Message[]) {
   return messages.map((m) => ({
     role: m.role === 'assistant' ? 'model' : ('user' as 'user' | 'model'),
@@ -30,9 +49,8 @@ export class GeminiClient {
           maxOutputTokens: 4096,
         },
       });
-    } catch {
-      // Gemini API errors: stop silently, show nothing to the user.
-      return;
+    } catch (err) {
+      throw new Error(`Gemini API: ${extractErrorMessage(err)}`);
     }
 
     let finalUsage: string | null = null;
@@ -47,9 +65,8 @@ export class GeminiClient {
 
     try {
       yield* byteScanner(usageWrapper());
-    } catch {
-      // Gemini stream errors: stop silently, show nothing to the user.
-      return;
+    } catch (err) {
+      throw new Error(`Gemini stream: ${extractErrorMessage(err)}`);
     }
 
     if (finalUsage) {

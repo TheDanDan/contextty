@@ -88,7 +88,7 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100vh',
+        height: '100%',
         backgroundColor: '#1e1e1e',
         fontFamily: "'Courier New', Courier, monospace",
         fontSize: '14px',
@@ -99,9 +99,9 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
-          justifyContent: 'space-between',
           backgroundColor: '#252526',
           borderBottom: '1px solid #2d2d2d',
           padding: '4px 12px',
@@ -201,7 +201,7 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
             </Tooltip>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifySelf: 'end' }}>
           <Tooltip text="Switch model">
             <select
               value={model}
