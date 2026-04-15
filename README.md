@@ -1,4 +1,4 @@
-# LLM Terminal
+# Contextty
 
 A stateful Unix shell emulator that runs entirely in your browser, powered by Google Gemini AI.
 

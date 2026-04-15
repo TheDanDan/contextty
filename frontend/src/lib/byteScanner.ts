@@ -15,7 +15,7 @@ interface GeminiChunk {
 
 /**
  * Async generator that wraps a Gemini stream and emits typed [ChunkType, string] tuples.
- * Direct TypeScript port of llm_terminal/llm/client.py _ByteScanner.
+ * Direct TypeScript port of contextty/llm/client.py _ByteScanner.
  *
  * Yields:
  *   ["mode",   "vim"]         — interactive mode tag, emitted once if present

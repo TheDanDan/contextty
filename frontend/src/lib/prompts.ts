@@ -8,7 +8,7 @@ INITIAL ENVIRONMENT
 
 OS:          Ubuntu 22.04.3 LTS
 Kernel:      5.15.0-91-generic x86_64
-Hostname:    llm-shell
+Hostname:    contextty
 Username:    user
 UID:         1000
 Groups:      user sudo
@@ -37,7 +37,7 @@ Installed packages (non-exhaustive):
   .profile
   .bash_logout
 
-/etc/hostname: llm-shell
+/etc/hostname: contextty
 /etc/os-release: standard Ubuntu 22.04.3 fields
 System clock starts at: 2026-04-13 09:00:00 UTC and advances a few seconds per command.
 

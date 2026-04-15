@@ -14,7 +14,7 @@ export class ShellState {
     this.env = {};
     this.exit_code = 0;
     this.username = 'user';
-    this.hostname = 'llm-shell';
+    this.hostname = 'contextty';
     this.aliases = { ll: 'ls -alF', la: 'ls -A', l: 'ls -CF' };
     this.jobs = [];
     this.interactive_mode = false;
