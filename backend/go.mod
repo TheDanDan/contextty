@@ -1,4 +1,4 @@
-module llm-terminal/backend
+module contextty/backend
 
 go 1.23.0
 

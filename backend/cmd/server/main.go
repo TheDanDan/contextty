@@ -8,11 +8,11 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-	"llm-terminal/backend/internal/auth"
-	"llm-terminal/backend/internal/config"
-	"llm-terminal/backend/internal/gemini"
-	"llm-terminal/backend/internal/handlers"
-	redisclient "llm-terminal/backend/internal/redis"
+	"contextty/backend/internal/auth"
+	"contextty/backend/internal/config"
+	"contextty/backend/internal/gemini"
+	"contextty/backend/internal/handlers"
+	redisclient "contextty/backend/internal/redis"
 )
 
 func main() {

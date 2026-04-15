@@ -8,7 +8,7 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	"llm-terminal/backend/internal/prompts"
+	"contextty/backend/internal/prompts"
 )
 
 // Message mirrors the frontend's Message type.

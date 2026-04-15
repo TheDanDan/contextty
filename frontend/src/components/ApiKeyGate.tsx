@@ -58,7 +58,7 @@ export default function ApiKeyGate({ onKeySet, onTrialStart }: Props) {
       <div style={styles.card}>
         <div style={styles.header}>
           <span style={styles.prompt}>$</span>
-          <span style={styles.title}> llm-terminal</span>
+          <span style={styles.title}> contextty</span>
         </div>
         <p style={styles.subtitle}>A stateful Unix shell powered by Google Gemini.</p>
 

@@ -70,7 +70,7 @@ export class SessionManager {
         }
       }
     } catch (err) {
-      const errorMsg = `\r\n\x1b[31mllm-terminal error: ${String(err)}\x1b[0m\r\n`;
+      const errorMsg = `\r\n\x1b[31mcontextty error: ${String(err)}\x1b[0m\r\n`;
       fullAssistantText += errorMsg;
       yield ['error', errorMsg];
     }

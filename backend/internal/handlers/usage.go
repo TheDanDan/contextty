@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	redisclient "llm-terminal/backend/internal/redis"
+	redisclient "contextty/backend/internal/redis"
 )
 
 // UsageHandler handles GET /me.

@@ -6,6 +6,112 @@ import Tooltip from './Tooltip';
 import type { SessionManager } from '../lib/sessionManager';
 import { fetchTrialInfo } from '../lib/trialClient';
 
+function AboutModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0,0,0,0.65)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '16px',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: '#252526',
+          border: '1px solid #3c3c3c',
+          borderRadius: '8px',
+          padding: '28px 32px',
+          maxWidth: '520px',
+          width: '100%',
+          fontFamily: "'Courier New', Courier, monospace",
+          position: 'relative',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+        }}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '14px',
+            background: 'transparent',
+            border: 'none',
+            color: '#888',
+            cursor: 'pointer',
+            fontSize: '18px',
+            lineHeight: 1,
+            padding: '2px 6px',
+          }}
+        >
+          ×
+        </button>
+
+        {/* Title */}
+        <div style={{ marginBottom: '16px' }}>
+          <span style={{ color: '#4ec94e', fontWeight: 'bold', fontSize: '22px' }}>$ </span>
+          <span style={{ color: '#d4d4d4', fontWeight: 'bold', fontSize: '22px' }}>contextty</span>
+        </div>
+
+        <p style={{ color: '#9d9d9d', fontSize: '13px', lineHeight: '1.7', marginBottom: '18px' }}>
+          A stateful Unix shell that lives in your browser — powered by Google Gemini. Type real
+          shell commands and get back real output, with the AI keeping track of your working
+          directory, environment variables, and session history across every message.
+        </p>
+
+        <p style={{ color: '#6a9955', fontSize: '12px', lineHeight: '1.7', marginBottom: '20px' }}>
+          Whether you're exploring a concept, running a quick script, or just want a capable
+          terminal without spinning up a VM — contextty has you covered. No setup, no install,
+          just open and start typing.
+        </p>
+
+        {/* Tech stack */}
+        <div
+          style={{
+            borderTop: '1px solid #3c3c3c',
+            paddingTop: '16px',
+          }}
+        >
+          <p style={{ color: '#569cd6', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px' }}>
+            Built with
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {[
+              'React + TypeScript',
+              'Vite',
+              'Google Gemini 2.5',
+              'Go (Gin)',
+              'Redis',
+              'Firebase Auth',
+            ].map((tech) => (
+              <span
+                key={tech}
+                style={{
+                  backgroundColor: '#1e1e1e',
+                  border: '1px solid #3c3c3c',
+                  borderRadius: '4px',
+                  color: '#dcdcaa',
+                  fontSize: '11px',
+                  padding: '3px 9px',
+                }}
+              >
+                {tech}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const MODELS = [
   { value: 'gemini-2.5-flash', label: 'gemini-2.5-flash' },
   { value: 'gemini-2.5-pro', label: 'gemini-2.5-pro' },
@@ -55,6 +161,15 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
   // Estimate msgs remaining: use observed burn rate if available, else ~$0.001/msg for flash models
   const estimatedCostPerMsg = usage.burnRate > 0 ? usage.burnRate : 0.001;
   const estimatedMsgsLeft = budgetLeft != null ? Math.floor(budgetLeft / estimatedCostPerMsg) : null;
+
+  const [showAbout, setShowAbout] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const promptBarRef = useRef<PromptBarHandle>(null);
@@ -109,11 +224,23 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
           userSelect: 'none',
         }}
       >
-        <span style={{ color: '#4ec94e', fontWeight: 'bold', fontSize: '13px' }}>llm-terminal</span>
+        <span
+          onClick={() => setShowAbout(true)}
+          style={{
+            color: '#4ec94e',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+          title="About contextty"
+        >
+          contextty
+        </span>
 
         <div
           style={{
-            display: 'flex',
+            display: isMobile ? 'none' : 'flex',
             gap: '16px',
             fontSize: '11px',
             color: '#888',
@@ -202,7 +329,7 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifySelf: 'end' }}>
-          <Tooltip text="Switch model">
+          {!isMobile && <Tooltip text="Switch model">
             <select
               value={model}
               onChange={(e) => onChangeModel(e.target.value)}
@@ -214,7 +341,7 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
                 </option>
               ))}
             </select>
-          </Tooltip>
+          </Tooltip>}
           <Tooltip text="Reset session">
             <button onClick={resetSession} style={toolbarBtn}>
               reset
@@ -255,6 +382,8 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
         savedInputRef={savedInputRef}
         onSubmit={sendCommand}
       />
+
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
     </div>
   );
 }

@@ -10,8 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"llm-terminal/backend/internal/gemini"
-	redisclient "llm-terminal/backend/internal/redis"
+	"contextty/backend/internal/gemini"
+	redisclient "contextty/backend/internal/redis"
 )
 
 type streamRequest struct {
