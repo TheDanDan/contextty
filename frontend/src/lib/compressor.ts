@@ -12,7 +12,7 @@ export function estimateTokens(messages: Message[]): number {
 }
 
 // Context window limits — same as Python version
-const SOFT_LIMIT = 160_000; // 80% — sliding window + summary
+const SOFT_LIMIT = 100_000; // 50% — compress early while state is still fresh
 const HARD_LIMIT = 180_000; // 90% — full snapshot reset
 
 type LLMComplete = (
@@ -52,7 +52,7 @@ async function softCompress(
   _state: ShellState,
   llmComplete: LLMComplete
 ): Promise<Message[]> {
-  const keepTail = 20;
+  const keepTail = 5;
   if (messages.length <= keepTail) return messages;
 
   const old = messages.slice(0, -keepTail);
@@ -89,7 +89,7 @@ async function hardReset(
   _state: ShellState,
   llmComplete: LLMComplete
 ): Promise<Message[]> {
-  const keepTail = 5;
+  const keepTail = 3;
   const recent = messages.length > keepTail ? messages.slice(-keepTail) : [...messages];
 
   let snapshotText: string;

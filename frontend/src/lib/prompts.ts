@@ -144,10 +144,13 @@ Required fields:
   "packages_installed": ["list of packages installed via apt/pip/npm"],
   "env_vars_set": {"KEY": "value"},
   "aliases_defined": {"name": "expansion"},
-  "significant_commands": ["commands that changed state, one per item"]
+  "significant_commands": ["commands that changed state, one per item"],
+  "file_contents": {"/absolute/path": "first 400 chars of the file's current content (for every file created or modified)"},
+  "current_state": {"cwd": "...", "env": {}, "aliases": {}, "exit_code": 0, "jobs": []}
 }
 
-Omit empty arrays/objects. Include only state-changing commands (skip ls, cat, pwd, echo, etc.).`;
+Omit empty arrays/objects. Include only state-changing commands in significant_commands (skip ls, cat, pwd, echo, etc.).
+Always populate file_contents for any file that was written to — this is critical for session recovery.`;
 
 export const FILESYSTEM_SNAPSHOT_PROMPT = `Based on everything that has happened in this shell session, produce a complete JSON snapshot
 of the current virtual system state. Output ONLY valid JSON.
@@ -159,11 +162,13 @@ Required structure:
   "aliases": {"name": "expansion"},
   "jobs": [],
   "filesystem": {
-    "/path/to/file": "full file contents (truncate at 500 chars with '...[truncated]')",
+    "/path/to/file": "full file contents (truncate at 1200 chars with '...[truncated]')",
     "/path/to/dir/": null
   },
   "packages_installed": ["extra packages beyond base Ubuntu 22.04"],
-  "bash_history": ["recent commands, newest last"]
+  "bash_history": ["last 20 commands, newest last"],
+  "notes": ["key facts needed to continue the session, e.g. 'user was editing /etc/nginx/nginx.conf at line 42', 'running web server on port 8080'"]
 }
 
-Be thorough and accurate. This snapshot will be used to restore the session after a context reset.`;
+Be thorough and accurate — include every file that was created or modified with its full current content up to 1200 chars.
+This snapshot is the sole source of truth after a context reset; missing file contents mean the LLM cannot answer questions about those files.`;

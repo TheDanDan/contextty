@@ -70,11 +70,25 @@ func StreamHandler(redis *redisclient.Client, gem *gemini.Client, costLimit floa
 			usageChan <- usage
 		}()
 
+		var streamUsage *gemini.Usage
 		c.Stream(func(w io.Writer) bool {
 			select {
 			case text, ok := <-chanText:
 				if !ok {
 					// Goroutine closed the channel — stream finished normally.
+					// usageChan is buffered and already has the value at this point.
+					select {
+					case usage := <-usageChan:
+						streamUsage = &usage
+						encoded, _ := json.Marshal(map[string]any{
+							"usage": map[string]int32{
+								"input_tokens":  usage.InputTokens,
+								"output_tokens": usage.OutputTokens,
+							},
+						})
+						writeSSE(w, string(encoded))
+					default:
+					}
 					writeSSE(w, "[DONE]")
 					return false
 				}
@@ -97,13 +111,10 @@ func StreamHandler(redis *redisclient.Client, gem *gemini.Client, costLimit floa
 		})
 
 		// Record cost only on successful Gemini completion.
-		// Gemini errors send to errChan and never populate usageChan, so the
-		// default branch fires and the user's usage counter is left unchanged.
 		// A detached context is used so cost is recorded even if the client
 		// disconnected and the request context is already cancelled.
-		select {
-		case usage := <-usageChan:
-			cost := usage.CostUSD(model)
+		if streamUsage != nil {
+			cost := streamUsage.CostUSD(model)
 			if cost > 0 {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cancel()
@@ -111,8 +122,6 @@ func StreamHandler(redis *redisclient.Client, gem *gemini.Client, costLimit floa
 					fmt.Printf("warn: failed to record cost for uid=%s: %v\n", uid, err)
 				}
 			}
-		default:
-			// Gemini error or cancellation; do not charge the user.
 		}
 	}
 }

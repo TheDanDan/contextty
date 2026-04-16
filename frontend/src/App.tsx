@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import ApiKeyGate from './components/ApiKeyGate';
 import Terminal from './components/Terminal';
 import { GeminiClient } from './lib/geminiClient';
@@ -41,8 +41,15 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  // Build session whenever mode/apiKey/model changes. Must be called unconditionally.
-  const session = useMemo(() => buildSession(mode, apiKey, model), [mode, apiKey, model]);
+  const sessionRef = useRef<SessionManager | null>(null);
+
+  // Rebuild session only when mode or apiKey changes (not model — use setClient for that).
+  const session = useMemo(() => {
+    const s = buildSession(mode, apiKey, model);
+    sessionRef.current = s;
+    return s;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, apiKey]);
 
   function handleKeySet(key: string, m: string) {
     setApiKey(key);
@@ -67,6 +74,11 @@ export default function App() {
   function handleChangeModel(m: string) {
     localStorage.setItem('gemini_model', m);
     setModel(m);
+    if (sessionRef.current) {
+      const newClient =
+        mode === 'byok' ? new GeminiClient(apiKey, m) : new TrialClient(m);
+      sessionRef.current.setClient(newClient);
+    }
   }
 
   if (mode === 'gate' || !session) {

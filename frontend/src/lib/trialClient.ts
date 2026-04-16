@@ -1,50 +1,15 @@
-import type { Message, ChunkType } from '../types';
+import type { Message, ChunkType, UsageMetadata } from '../types';
 import { byteScanner } from './byteScanner';
 import { getIdToken } from './firebaseAuth';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8080';
 
-// Each SSE data value is a JSON object `{"t": "...text..."}` for normal chunks,
-// or the sentinel strings "[DONE]" and "[ERROR] reason" for control messages.
-interface SSEChunk {
+interface SSETextChunk {
   t: string;
 }
 
-// Reads the SSE response body and yields objects matching byteScanner's input type.
-async function* sseToTextStream(response: Response): AsyncIterable<{ text?: string | null }> {
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    // SSE events are delimited by double newlines.
-    const events = buffer.split('\n\n');
-    buffer = events.pop() ?? '';
-
-    for (const event of events) {
-      for (const line of event.split('\n')) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6).trim();
-
-        if (data === '[DONE]') return;
-        if (data.startsWith('[ERROR]')) {
-          const reason = data.slice(8).trim();
-          if (reason === 'trial_limit_exceeded') {
-            throw new Error('trial_limit_exceeded');
-          }
-          // Gemini/backend errors: stop the stream silently, show nothing to the user.
-          return;
-        }
-
-        const obj = JSON.parse(data) as SSEChunk;
-        yield { text: obj.t };
-      }
-    }
-  }
+interface SSEUsageChunk {
+  usage: { input_tokens: number; output_tokens: number };
 }
 
 export async function fetchTrialInfo(): Promise<{
@@ -101,7 +66,53 @@ export class TrialClient {
       throw new Error(`backend_error_${response.status}`);
     }
 
-    yield* byteScanner(sseToTextStream(response));
+    let capturedUsage: UsageMetadata | null = null;
+
+    async function* textChunks(): AsyncIterable<{ text?: string | null }> {
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const events = buffer.split('\n\n');
+        buffer = events.pop() ?? '';
+
+        for (const event of events) {
+          for (const line of event.split('\n')) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6).trim();
+
+            if (data === '[DONE]') return;
+            if (data.startsWith('[ERROR]')) {
+              const reason = data.slice(8).trim();
+              if (reason === 'trial_limit_exceeded') throw new Error('trial_limit_exceeded');
+              return;
+            }
+
+            const obj = JSON.parse(data) as SSETextChunk & Partial<SSEUsageChunk>;
+            if (obj.usage) {
+              capturedUsage = {
+                promptTokenCount: obj.usage.input_tokens,
+                candidatesTokenCount: obj.usage.output_tokens,
+                totalTokenCount: obj.usage.input_tokens + obj.usage.output_tokens,
+              };
+            } else if (obj.t !== undefined) {
+              yield { text: obj.t };
+            }
+          }
+        }
+      }
+    }
+
+    yield* byteScanner(textChunks());
+
+    if (capturedUsage) {
+      yield ['usage', JSON.stringify(capturedUsage)];
+    }
   }
 
   // Context compression (complete()) is not used in trial mode — the daily cost

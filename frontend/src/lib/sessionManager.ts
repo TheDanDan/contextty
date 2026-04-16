@@ -16,8 +16,7 @@ const COSTS: Record<string, { input: number; output: number }> = {
 };
 
 const DEFAULT_COST = COSTS['gemini-2.5-flash-lite'];
-const TRUNCATE_LIMIT = 5000;
-const MAX_TRANSIENT_TURNS = 3;
+const MAX_TRANSIENT_TURNS = 1;
 
 export class SessionManager {
   private client: LLMClient;
@@ -76,15 +75,14 @@ export class SessionManager {
       yield ['error', errorMsg];
     }
 
-    // Reconstruct assistant message with XML tags (same format as Python version)
-    let storageAssistantText = fullAssistantText;
-    if (isTransient && storageAssistantText.length > TRUNCATE_LIMIT) {
-      storageAssistantText =
-        storageAssistantText.slice(0, TRUNCATE_LIMIT) + '\n\n[Output truncated to save context...]';
-    }
+    // Reconstruct assistant message with XML tags (same format as Python version).
+    // For transient commands (ls, cat, grep, etc.) the full output was already streamed
+    // to the user — don't waste context storing it verbatim. Only the <state> block is
+    // needed for the model to track machine state.
+    const storedOutput = isTransient ? '[output displayed to user]' : fullAssistantText;
 
     const reconstructed =
-      `<shell_output>${storageAssistantText}</shell_output>\n` +
+      `<shell_output>${storedOutput}</shell_output>\n` +
       `<state>${stateJson ?? '{}'}</state>`;
     this.messages.push({ role: 'assistant', content: reconstructed, isTransient });
 
@@ -124,6 +122,10 @@ export class SessionManager {
     // Final estimation to ensure UI reflects the reduced context size immediately after compression/pruning
     this.usage.activeTokens = estimateTokens(this.messages);
     yield ['usage', JSON.stringify(this.usage)];
+  }
+
+  setClient(client: LLMClient): void {
+    this.client = client;
   }
 
   reset(): void {
