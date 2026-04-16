@@ -259,11 +259,15 @@ export default function Terminal({ model, session, isTrial, onChangeKey, onChang
             alignItems: 'center',
           }}
         >
-          <Tooltip text={isTrial ? 'Estimated active context tokens' : 'Total tokens used in this session'}>
+          <Tooltip
+            text={isTrial ? 'Estimated active context tokens' : 'Total tokens used in this session'}
+          >
             <div>
               <span style={{ color: '#569cd6' }}>tokens:</span>{' '}
               <span style={{ color: '#dcdcaa' }}>
-                {isTrial ? `~${usage.activeTokens.toLocaleString()}` : usage.totalTokens.toLocaleString()}
+                {isTrial
+                  ? `~${usage.activeTokens.toLocaleString()}`
+                  : usage.totalTokens.toLocaleString()}
               </span>
             </div>
           </Tooltip>

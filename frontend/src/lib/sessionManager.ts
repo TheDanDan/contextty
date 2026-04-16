@@ -82,8 +82,7 @@ export class SessionManager {
     const storedOutput = isTransient ? '[output displayed to user]' : fullAssistantText;
 
     const reconstructed =
-      `<shell_output>${storedOutput}</shell_output>\n` +
-      `<state>${stateJson ?? '{}'}</state>`;
+      `<shell_output>${storedOutput}</shell_output>\n` + `<state>${stateJson ?? '{}'}</state>`;
     this.messages.push({ role: 'assistant', content: reconstructed, isTransient });
 
     // Update shell state from returned JSON

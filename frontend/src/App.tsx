@@ -75,8 +75,7 @@ export default function App() {
     localStorage.setItem('gemini_model', m);
     setModel(m);
     if (sessionRef.current) {
-      const newClient =
-        mode === 'byok' ? new GeminiClient(apiKey, m) : new TrialClient(m);
+      const newClient = mode === 'byok' ? new GeminiClient(apiKey, m) : new TrialClient(m);
       sessionRef.current.setClient(newClient);
     }
   }
