@@ -21,7 +21,7 @@ function buildSession(mode: AppMode, apiKey: string, model: string): SessionMana
 export default function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') ?? '');
   const [model, setModel] = useState(
-    () => localStorage.getItem('gemini_model') ?? 'gemini-2.5-flash'
+    () => localStorage.getItem('gemini_model') ?? 'gemini-2.5-flash-lite'
   );
   const [mode, setMode] = useState<AppMode>(() => {
     if (localStorage.getItem('gemini_api_key')) return 'byok';

@@ -58,10 +58,7 @@ func StreamHandler(redis *redisclient.Client, gem *gemini.Client, costLimit floa
 		errChan := make(chan error, 1)
 		usageChan := make(chan gemini.Usage, 1)
 
-		model := req.Model
-		if model == "" {
-			model = "gemini-2.5-flash"
-		}
+		model := gemini.NormalizeModel(req.Model)
 
 		go func() {
 			defer close(chanText)

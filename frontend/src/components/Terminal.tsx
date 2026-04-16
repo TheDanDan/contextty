@@ -67,9 +67,9 @@ function AboutModal({ onClose }: { onClose: () => void }) {
         </p>
 
         <p style={{ color: '#6a9955', fontSize: '12px', lineHeight: '1.7', marginBottom: '20px' }}>
-          Whether you're exploring a concept, running a quick script, or just want a capable
-          terminal without spinning up a VM — contextty has you covered. No setup, no install, just
-          open and start typing.
+          See what happens when you let an LLM pretend to be a Unix shell. It's not a real OS, just
+          a stateful conversational interface that plays along with shell commands and tries to keep
+          track of context.
         </p>
 
         {/* Tech stack */}
@@ -121,6 +121,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 }
 
 const MODELS = [
+  { value: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite' },
   { value: 'gemini-2.5-flash', label: 'gemini-2.5-flash' },
   { value: 'gemini-2.5-pro', label: 'gemini-2.5-pro' },
 ];

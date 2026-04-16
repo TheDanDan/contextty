@@ -8,7 +8,7 @@ interface Props {
 
 export default function ApiKeyGate({ onKeySet, onTrialStart }: Props) {
   const [key, setKey] = useState('');
-  const [model, setModel] = useState('gemini-2.5-flash');
+  const [model, setModel] = useState('gemini-2.5-flash-lite');
   const [error, setError] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
@@ -73,7 +73,8 @@ export default function ApiKeyGate({ onKeySet, onTrialStart }: Props) {
             onChange={(e) => setModel(e.target.value)}
             style={{ ...styles.input, cursor: 'pointer' }}
           >
-            <option value="gemini-2.5-flash">gemini-2.5-flash — fast</option>
+            <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite — cheaper</option>
+            <option value="gemini-2.5-flash">gemini-2.5-flash — balanced</option>
             <option value="gemini-2.5-pro">gemini-2.5-pro — more capable</option>
           </select>
         </div>

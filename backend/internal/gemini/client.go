@@ -23,18 +23,34 @@ type Usage struct {
 	OutputTokens int32
 }
 
+const DefaultModel = "gemini-2.5-flash-lite"
+
 // modelPricing maps model name to [inputPricePerToken, outputPricePerToken] in USD.
 var modelPricing = map[string][2]float64{
-	"gemini-2.5-flash": {0.15 / 1e6, 0.60 / 1e6},
-	"gemini-2.0-flash": {0.10 / 1e6, 0.40 / 1e6},
-	"gemini-1.5-flash": {0.075 / 1e6, 0.30 / 1e6},
+	"gemini-2.5-flash-lite": {0.10 / 1e6, 0.40 / 1e6},
+	"gemini-2.5-flash":      {0.15 / 1e6, 0.60 / 1e6},
+	"gemini-2.5-pro":        {0.625 / 1e6, 2.40 / 1e6},
+}
+
+// NormalizeModel clamps the requested model to the supported set.
+func NormalizeModel(model string) string {
+	if model == "" {
+		return DefaultModel
+	}
+	switch model {
+	case "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro":
+		return model
+	default:
+		return DefaultModel
+	}
 }
 
 // CostUSD returns the estimated USD cost for this usage given the model.
 func (u Usage) CostUSD(model string) float64 {
+	model = NormalizeModel(model)
 	pricing, ok := modelPricing[model]
 	if !ok {
-		pricing = modelPricing["gemini-2.5-flash"]
+		pricing = modelPricing[DefaultModel]
 	}
 	return float64(u.InputTokens)*pricing[0] + float64(u.OutputTokens)*pricing[1]
 }
@@ -56,9 +72,7 @@ func (c *Client) StreamText(ctx context.Context, messages []Message, model strin
 	if len(messages) == 0 {
 		return Usage{}, fmt.Errorf("messages must not be empty")
 	}
-	if model == "" {
-		model = "gemini-2.5-flash"
-	}
+	model = NormalizeModel(model)
 
 	client, err := genai.NewClient(ctx, option.WithAPIKey(c.apiKey))
 	if err != nil {

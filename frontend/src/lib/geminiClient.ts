@@ -37,7 +37,7 @@ export class GeminiClient {
   private ai: GoogleGenAI;
   model: string;
 
-  constructor(apiKey: string, model = 'gemini-2.5-flash') {
+  constructor(apiKey: string, model = 'gemini-2.5-flash-lite') {
     this.ai = new GoogleGenAI({ apiKey });
     this.model = model;
   }

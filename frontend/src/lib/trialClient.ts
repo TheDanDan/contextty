@@ -68,7 +68,7 @@ export async function fetchTrialInfo(): Promise<{
 export class TrialClient {
   model: string;
 
-  constructor(model = 'gemini-2.5-flash') {
+  constructor(model = 'gemini-2.5-flash-lite') {
     this.model = model;
   }
 

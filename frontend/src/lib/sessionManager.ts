@@ -10,11 +10,12 @@ export interface LLMClient {
 }
 
 const COSTS: Record<string, { input: number; output: number }> = {
+  'gemini-2.5-flash-lite': { input: 0.3 / 1e6, output: 2.5 / 1e6 },
   'gemini-2.5-flash': { input: 0.3 / 1e6, output: 2.5 / 1e6 },
   'gemini-2.5-pro': { input: 1.25 / 1e6, output: 10.0 / 1e6 },
 };
 
-const DEFAULT_COST = { input: 0.3 / 1e6, output: 2.5 / 1e6 };
+const DEFAULT_COST = COSTS['gemini-2.5-flash-lite'];
 const TRUNCATE_LIMIT = 5000;
 const MAX_TRANSIENT_TURNS = 3;
 
